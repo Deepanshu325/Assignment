@@ -1,11 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
-/*const bodyParser = require('body-parser');*/
 const cors = require('cors');
 const User = require('./db/Users')
 const app = express();
 app.use(express.json());
-/* app.use(bodyParser.json()); */
 app.use(cors());
 
 mongoose.connect("mongodb://localhost:27017/assignment", { useNewUrlParser: true, useUnifiedTopology: true });
@@ -15,11 +13,9 @@ mongoose.connect("mongodb://localhost:27017/assignment", { useNewUrlParser: true
 app.get('/api/users', async (req, res) => {
   const { page = 1, limit = 20, search = '', domain, gender,available} = req.query;
 
-  // Parse page and limit as integers
   const pageNum = parseInt(page, 10) || 1;
   const limitNum = parseInt(limit, 10) || 20;
 
-  // Construct the filter object based on query parameters
   const filter = {
     ...(search && { first_name : { $regex: search, $options: 'i' }}),
     ...(domain && { domain }),
@@ -28,23 +24,21 @@ app.get('/api/users', async (req, res) => {
   };
 
   try {
-    // Fetch users with the applied filter, limit, and skip for pagination
+
     const users = await User.find(filter)
       .limit(limitNum)
       .skip((pageNum - 1) * limitNum)
       .exec();
 
-    // Count the total number of users that match the filter
+  
     const count = await User.countDocuments(filter);
 
-    // Send the response with users, total pages, and current page
     res.json({
       users,
       totalPages: Math.ceil(count / limitNum),
       currentPage: pageNum,
     });
   } catch (error) {
-    // Handle any potential errors
     res.status(500).json({ message: 'Error fetching users', error });
   }
 });
